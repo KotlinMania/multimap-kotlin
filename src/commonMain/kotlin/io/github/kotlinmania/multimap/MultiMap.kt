@@ -7,6 +7,21 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
+package io.github.kotlinmania.multimap
+
+// Upstream re-exports `std::collections::hash_map::Iter as IterAll` and
+// `IterMut as IterAllMut` from the crate root. Kotlin's standard library does
+// not vend a separate immutable / mutable map iterator pair, so the port
+// surfaces those views directly through the [MultiMap.iterAll] and
+// [MultiMap.iterAllMut] methods, which yield `Pair<K, MutableList<V>>`
+// (mutability of the backing list matches the Rust iterator's mutability).
+//
+// Upstream `MultiMap<K, V, S = RandomState>` carries a `BuildHasher` generic
+// so callers can swap the standard library hasher. Kotlin's `MutableMap`
+// hides hasher selection, so the port collapses to `MultiMap<K, V>`. The
+// upstream `with_hasher` and `with_capacity_and_hasher` constructors have no
+// faithful Kotlin counterpart and therefore do not appear here.
+
 /**
  * A map implementation which allows storing multiple values per key.
  *
@@ -64,22 +79,6 @@
  * check(map.getVec("key1") == mutableListOf(42, 1337))
  * ```
  */
-package io.github.kotlinmania.multimap
-
-// Upstream re-exports `std::collections::hash_map::Iter as IterAll` and
-// `IterMut as IterAllMut` from the crate root. Kotlin's standard library does
-// not vend a separate immutable / mutable map iterator pair, so the port
-// surfaces those views directly through the [MultiMap.iterAll] and
-// [MultiMap.iterAllMut] methods, which yield `Pair<K, MutableList<V>>` and
-// `Pair<K, MutableList<V>>` respectively (mutability of the backing list
-// matches the Rust iterator's mutability).
-//
-// Upstream `MultiMap<K, V, S = RandomState>` carries a `BuildHasher` generic
-// so callers can swap the standard library hasher. Kotlin's `MutableMap`
-// hides hasher selection, so the port collapses to `MultiMap<K, V>`. The
-// upstream `with_hasher` and `with_capacity_and_hasher` constructors have no
-// faithful Kotlin counterpart and therefore do not appear here.
-
 class MultiMap<K, V> private constructor(
     internal val inner: MutableMap<K, MutableList<V>>,
 ) : Iterable<Pair<K, MutableList<V>>> {
@@ -679,118 +678,4 @@ class MultiMap<K, V> private constructor(
             return multimap
         }
     }
-}
-
-// impl Extend<(K, V)> for MultiMap
-/** Extends the multimap with single key-value pairs. */
-fun <K, V> MultiMap<K, V>.extend(iter: Iterable<Pair<K, V>>) {
-    for ((k, v) in iter) {
-        insert(k, v)
-    }
-}
-
-// impl Extend<(K, Vec<V>)> for MultiMap
-/** Extends the multimap with `Pair<K, List<V>>` values. */
-fun <K, V> MultiMap<K, V>.extendVec(iter: Iterable<Pair<K, List<V>>>) {
-    for ((k, values) in iter) {
-        when (val e = entry(k)) {
-            is Entry.Occupied -> {
-                e.entry.getVecMut().addAll(values)
-            }
-            is Entry.Vacant -> {
-                e.entry.insertVec(values.toMutableList())
-            }
-        }
-    }
-}
-
-/**
- * Iterator visiting pairs of each key and its first value in arbitrary order.
- *
- * Mirrors the upstream `Iter<'a, K, V>` struct.
- */
-class Iter<K, V> internal constructor(
-    private val inner: Iterator<Map.Entry<K, MutableList<V>>>,
-) : Iterator<Pair<K, V>> {
-    private var pending: Pair<K, V>? = null
-
-    private fun advance(): Pair<K, V>? {
-        while (inner.hasNext()) {
-            val (k, v) = inner.next()
-            val first = v.firstOrNull()
-            if (first != null) return k to first
-        }
-        return null
-    }
-
-    override fun hasNext(): Boolean {
-        if (pending != null) return true
-        pending = advance()
-        return pending != null
-    }
-
-    override fun next(): Pair<K, V> {
-        val ready = pending
-        pending = null
-        return ready ?: advance() ?: throw NoSuchElementException()
-    }
-}
-
-/**
- * Mutable iterator visiting pairs of each key and its first value in arbitrary
- * order.
- *
- * Mirrors the upstream `IterMut<'a, K, V>` struct. Mutations through the
- * yielded [Pair.second] in Kotlin are by copy; to write back into the map use
- * [MultiMap.getVecMut].
- */
-class IterMut<K, V> internal constructor(
-    private val inner: Iterator<Map.Entry<K, MutableList<V>>>,
-) : Iterator<Pair<K, V>> {
-    private var pending: Pair<K, V>? = null
-
-    private fun advance(): Pair<K, V>? {
-        while (inner.hasNext()) {
-            val (k, v) = inner.next()
-            val first = v.firstOrNull()
-            if (first != null) return k to first
-        }
-        return null
-    }
-
-    override fun hasNext(): Boolean {
-        if (pending != null) return true
-        pending = advance()
-        return pending != null
-    }
-
-    override fun next(): Pair<K, V> {
-        val ready = pending
-        pending = null
-        return ready ?: advance() ?: throw NoSuchElementException()
-    }
-}
-
-/**
- * Create a [MultiMap] from a list of key value pairs.
- *
- * Mirrors the upstream `multimap!` macro.
- *
- * ## Example
- *
- * ```
- * val map = multimapOf(
- *     "dog" to "husky",
- *     "dog" to "retreaver",
- *     "dog" to "shiba inu",
- *     "cat" to "cat",
- * )
- * ```
- */
-fun <K, V> multimapOf(vararg pairs: Pair<K, V>): MultiMap<K, V> {
-    val map = MultiMap.withCapacity<K, V>(pairs.size)
-    for ((k, v) in pairs) {
-        map.insert(k, v)
-    }
-    return map
 }

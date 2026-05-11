@@ -24,7 +24,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class LibTest {
+class MultiMapTest {
     @Test
     fun new() {
         MultiMap<Int, Int>()
