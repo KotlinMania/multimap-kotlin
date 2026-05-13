@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.testing.AbstractTestTask
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
@@ -148,6 +151,30 @@ kotlin {
     jvmToolchain(21)
 }
 
+// Show every test event in the CI log so runs are auditable.
+// Without this, gradle's default test-task output is just
+// `> Task :iosSimulatorArm64Test` with no per-test PASSED/FAILED,
+// which makes a green run indistinguishable from a no-op task. The
+// XML/HTML reports in build/test-results/ and build/reports/tests/ still
+// carry the canonical record, but those aren't visible in CI logs.
+tasks.withType<AbstractTestTask>().configureEach {
+    testLogging {
+        events(
+            TestLogEvent.STARTED,
+            TestLogEvent.PASSED,
+            TestLogEvent.SKIPPED,
+            TestLogEvent.FAILED,
+            TestLogEvent.STANDARD_OUT,
+            TestLogEvent.STANDARD_ERROR,
+        )
+        exceptionFormat = TestExceptionFormat.FULL
+        showCauses = true
+        showExceptions = true
+        showStackTraces = true
+        showStandardStreams = true
+    }
+}
+
 rootProject.extensions.configure<NodeJsEnvSpec>("kotlinNodeJsSpec") {
     version.set("24.15.0")
 }
@@ -229,6 +256,9 @@ mavenPublishing {
                 name.set("Sydney Renee")
                 email.set("sydney@solace.ofharmony.ai")
                 url.set("https://github.com/sydneyrenee")
+                organization.set("The Solace Project")
+                organizationUrl.set("https://github.com/KotlinMania")
+                roles.set(listOf("maintainer", "kotlin-port-author"))
             }
         }
 
@@ -337,12 +367,15 @@ val codeqlCompileJvm = tasks.register<JavaExec>("codeqlCompileJvm") {
 tasks.register("test") {
     group = "verification"
     description =
-        "Runs a portable test suite (macOS + JS + WasmJS). Android and non-host native targets are intentionally excluded."
+        "Runs the host-portable test suite (macOS + JS + WasmJS + Android unit). " +
+        "Non-host native targets (mingwX64, linuxX64) only run on their own host."
 
     val defaultTestTasks = listOf(
         "macosArm64Test",
         "jsNodeTest",
         "wasmJsNodeTest",
+        "compileAndroidMain",
+        "assembleUnitTest",
     )
 
     dependsOn(defaultTestTasks.mapNotNull { taskName -> tasks.findByName(taskName) })
