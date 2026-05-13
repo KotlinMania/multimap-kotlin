@@ -44,33 +44,76 @@ kotlin {
 
     val xcf = XCFramework("Multimap")
 
+    // Apple desktop
     macosArm64 {
-        binaries.framework {
-            baseName = "Multimap"
-            xcf.add(this)
-        }
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
     }
-    linuxX64()
-    mingwX64()
+    // macosX64 was removed in Kotlin 2.3 — "Target is no longer available."
+
+    // iOS
     iosArm64 {
-        binaries.framework {
-            baseName = "Multimap"
-            xcf.add(this)
-        }
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
     }
     iosSimulatorArm64 {
-        binaries.framework {
-            baseName = "Multimap"
-            xcf.add(this)
-        }
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
     }
+    iosX64 {
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
+    }
+
+    // tvOS
+    tvosArm64 {
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
+    }
+    tvosSimulatorArm64 {
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
+    }
+    // tvosX64 was removed in Kotlin 2.3 — "Target is no longer available."
+
+    // watchOS
+    watchosArm32 {
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
+    }
+    watchosArm64 {
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
+    }
+    watchosDeviceArm64 {
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
+    }
+    watchosSimulatorArm64 {
+        binaries.framework { baseName = "Multimap"; xcf.add(this) }
+    }
+    // watchosX64 was removed in Kotlin 2.3 — "Target is no longer available."
+
+    // Linux
+    linuxX64()
+    linuxArm64()
+
+    // Windows
+    mingwX64()
+
+    // Android native (NDK targets — separate from the Android JVM library below)
+    androidNativeArm32()
+    androidNativeArm64()
+    androidNativeX86()
+    androidNativeX64()
+
+    // Web — JS (browser + nodejs runtimes on a single target)
     js {
         browser()
         nodejs()
     }
+
+    // Web — WasmJS
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
+        nodejs()
+    }
+
+    // Web — WasmWASI (experimental; nodejs runtime via wasi-preview1)
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmWasi {
         nodejs()
     }
 
@@ -106,11 +149,11 @@ kotlin {
 }
 
 rootProject.extensions.configure<NodeJsEnvSpec>("kotlinNodeJsSpec") {
-    version.set("22.22.2")
+    version.set("24.15.0")
 }
 
 rootProject.extensions.configure<WasmNodeJsEnvSpec>("kotlinWasmNodeJsSpec") {
-    version.set("22.22.2")
+    version.set("24.15.0")
 }
 
 rootProject.extensions.configure<YarnRootEnvSpec>("kotlinYarnSpec") {
