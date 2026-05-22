@@ -26,6 +26,11 @@ import kotlin.test.assertTrue
 
 class LibTest {
     @Test
+    fun create() {
+        MultiMap<Int, Int>(mutableMapOf())
+    }
+
+    @Test
     fun new() {
         MultiMap<Int, Int>()
     }
