@@ -80,7 +80,7 @@ package io.github.kotlinmania.multimap
 // upstream `with_hasher` and `with_capacity_and_hasher` constructors have no
 // faithful Kotlin counterpart and therefore do not appear here.
 
-class MultiMap<K, V> private constructor(
+class MultiMap<K, V> internal constructor(
     internal val inner: MutableMap<K, MutableList<V>>,
 ) : Iterable<Pair<K, MutableList<V>>> {
 
