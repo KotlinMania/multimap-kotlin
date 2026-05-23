@@ -651,13 +651,17 @@ class MultiMap<K, V> internal constructor(
          * across every target backend; the port still accepts the value so
          * the upstream API surface is preserved.
          */
-        fun <K, V> withCapacity(capacity: Int): MultiMap<K, V> {
+        // Marked `internal` because Swift Export cannot infer the type
+        // parameters from the bridge call site (no value-arg carries K/V)
+        // and fails `compileSwiftExportMainKotlinMacosArm64` with
+        // `Cannot infer type for type parameter 'K' / 'V'`.
+        internal fun <K, V> withCapacity(capacity: Int): MultiMap<K, V> {
             return MultiMap(HashMap(capacity))
         }
 
         // impl Default for MultiMap
         /** Mirrors Rust `Default` for the [MultiMap] type. */
-        fun <K, V> default(): MultiMap<K, V> = MultiMap()
+        internal fun <K, V> default(): MultiMap<K, V> = MultiMap()
 
         // impl FromIterator<(K, V)> for MultiMap
         /** Builds a [MultiMap] from an iterable of single key-value pairs. */
