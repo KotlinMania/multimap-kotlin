@@ -2,7 +2,7 @@
 #
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
-# Covers two ecosystems present in this repo:
+# Covers three ecosystems present in this repo:
 #
 #   1. Gradle — kotlin-multiplatform plugin, kotlin-serialization plugin,
 #      android-kotlin-multiplatform-library plugin, vanniktech maven-publish,
@@ -14,11 +14,10 @@
 #      them straight from the workflow files, and a hand-kept list in this
 #      comment would silently drift from the actual pins.
 #
-# The vendored gradle/npm/karma-webpack/package.json is NOT covered: that
-# directory is a workspace-template-managed pin of karma-webpack and its
-# transitive deps, and bumping it here in isolation would drift from the
-# kotlinmania workspace baseline. Updates land via the workspace template,
-# not via Dependabot on this repo.
+#   3. npm — the kotlin-js-store directory is registered with
+#      open-pull-requests-limit: 0 to prevent Dependabot from creating PRs for
+#      vendored npm dependencies. These dependencies are workspace-template-managed
+#      and updates land via the workspace template, not via Dependabot on this repo.
 
 version: 2
 updates:
@@ -39,3 +38,14 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+
+  # Explicitly register kotlin-js-store as an npm ecosystem with PR limit 0.
+  # This prevents Dependabot from creating PRs for vendored dependencies that
+  # are intentionally managed via the workspace template, not via Dependabot.
+  # Setting open-pull-requests-limit to 0 disables both version and security
+  # updates for this directory.
+  - package-ecosystem: npm
+    directory: "/kotlin-js-store"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
