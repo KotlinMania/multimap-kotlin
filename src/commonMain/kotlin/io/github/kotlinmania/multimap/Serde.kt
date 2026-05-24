@@ -18,9 +18,11 @@
  * helper visitor collapse into [MultiMapSerializer], which delegates to a
  * `Map<K, List<V>>` serializer underneath.
  */
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
 
 package io.github.kotlinmania.multimap
 
+import kotlin.native.HiddenFromObjC
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
@@ -40,6 +42,7 @@ import kotlinx.serialization.encoding.Encoder
 // hasher selection — and pairs the [MultiMap] with a serializer that round-
 // trips it as a `Map<K, List<V>>` using kotlinx.serialization's built-in
 // [MapSerializer] and [ListSerializer].
+@HiddenFromObjC
 class MultiMapSerializer<K, V>(
     keySerializer: KSerializer<K>,
     valueSerializer: KSerializer<V>,

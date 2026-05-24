@@ -64,7 +64,11 @@
  * check(map.getVec("key1") == mutableListOf(42, 1337))
  * ```
  */
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.multimap
+
+import kotlin.native.HiddenFromObjC
 
 // Upstream re-exports `std::collections::hash_map::Iter as IterAll` and
 // `IterMut as IterAllMut` from the crate root. Kotlin's standard library does
@@ -80,6 +84,7 @@ package io.github.kotlinmania.multimap
 // upstream `with_hasher` and `with_capacity_and_hasher` constructors have no
 // faithful Kotlin counterpart and therefore do not appear here.
 
+@HiddenFromObjC
 class MultiMap<K, V> internal constructor(
     internal val inner: MutableMap<K, MutableList<V>>,
 ) : Iterable<Pair<K, MutableList<V>>> {
@@ -687,6 +692,7 @@ class MultiMap<K, V> internal constructor(
 
 // impl Extend<(K, V)> for MultiMap
 /** Extends the multimap with single key-value pairs. */
+@HiddenFromObjC
 fun <K, V> MultiMap<K, V>.extend(iter: Iterable<Pair<K, V>>) {
     for ((k, v) in iter) {
         insert(k, v)
@@ -695,6 +701,7 @@ fun <K, V> MultiMap<K, V>.extend(iter: Iterable<Pair<K, V>>) {
 
 // impl Extend<(K, Vec<V>)> for MultiMap
 /** Extends the multimap with `Pair<K, List<V>>` values. */
+@HiddenFromObjC
 fun <K, V> MultiMap<K, V>.extendVec(iter: Iterable<Pair<K, List<V>>>) {
     for ((k, values) in iter) {
         when (val e = entry(k)) {
@@ -713,6 +720,7 @@ fun <K, V> MultiMap<K, V>.extendVec(iter: Iterable<Pair<K, List<V>>>) {
  *
  * Mirrors the upstream `Iter<'a, K, V>` struct.
  */
+@HiddenFromObjC
 class Iter<K, V> internal constructor(
     private val inner: Iterator<Map.Entry<K, MutableList<V>>>,
 ) : Iterator<Pair<K, V>> {
@@ -748,6 +756,7 @@ class Iter<K, V> internal constructor(
  * yielded [Pair.second] in Kotlin are by copy; to write back into the map use
  * [MultiMap.getVecMut].
  */
+@HiddenFromObjC
 class IterMut<K, V> internal constructor(
     private val inner: Iterator<Map.Entry<K, MutableList<V>>>,
 ) : Iterator<Pair<K, V>> {
@@ -791,6 +800,7 @@ class IterMut<K, V> internal constructor(
  * )
  * ```
  */
+@HiddenFromObjC
 fun <K, V> multimapOf(vararg pairs: Pair<K, V>): MultiMap<K, V> {
     val map = MultiMap.withCapacity<K, V>(pairs.size)
     for ((k, v) in pairs) {
