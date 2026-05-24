@@ -113,7 +113,7 @@ dual licensed as above, without any additional terms or conditions.
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:multimap-kotlin:0.1.1")
+    implementation("io.github.kotlinmania:multimap-kotlin:0.1.2")
 }
 ```
 

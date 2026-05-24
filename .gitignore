@@ -46,6 +46,11 @@ __pycache__/
 
 # Android SDK
 /.android-sdk/
+/.android/
+/.config/
+/.konan/
+/.yarn-cache/
+/Library/
 local.properties
 
 # Swift Package Manager / Xcode workspace state.
@@ -62,6 +67,12 @@ local.properties
 # to (`build/swift-test/lib*.a` + `.swiftmodule/` bundles when run with
 # the Xcode-style env vars) is already covered by `build/` above.
 .swiftpm/
+.swift-home/
+.swiftpm-cache/
+.swiftpm-config/
+.swiftpm-security/
+.swiftpm-module-cache/
+.clang-module-cache/
 DerivedData/
 *.xcuserstate
 *.xcworkspace/xcuserdata/

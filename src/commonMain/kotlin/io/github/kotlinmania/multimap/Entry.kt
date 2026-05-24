@@ -7,7 +7,11 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
 package io.github.kotlinmania.multimap
+
+import kotlin.native.HiddenFromObjC
 
 // Upstream `entry.rs` re-exports `OccupiedEntry` and `VacantEntry` from
 // `std::collections::hash_map`, wrapping each so the MultiMap can vend
@@ -20,6 +24,7 @@ package io.github.kotlinmania.multimap
 // upstream while compiling against the Kotlin standard library only.
 
 /** A view into a single occupied location in a MultiMap. */
+@HiddenFromObjC
 class OccupiedEntry<K, V> internal constructor(
     internal val inner: MutableMap<K, MutableList<V>>,
     internal val key: K,
@@ -89,6 +94,7 @@ class OccupiedEntry<K, V> internal constructor(
 }
 
 /** A view into a single empty location in a MultiMap. */
+@HiddenFromObjC
 class VacantEntry<K, V> internal constructor(
     internal val inner: MutableMap<K, MutableList<V>>,
     internal val key: K,
@@ -114,11 +120,14 @@ class VacantEntry<K, V> internal constructor(
 }
 
 /** A view into a single location in a map, which may be vacant or occupied. */
+@HiddenFromObjC
 sealed class Entry<K, V> {
     /** An occupied Entry. */
+    @HiddenFromObjC
     class Occupied<K, V>(val entry: OccupiedEntry<K, V>) : Entry<K, V>()
 
     /** A vacant Entry. */
+    @HiddenFromObjC
     class Vacant<K, V>(val entry: VacantEntry<K, V>) : Entry<K, V>()
 
     /**
