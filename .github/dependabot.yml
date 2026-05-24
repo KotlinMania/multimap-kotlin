@@ -39,3 +39,15 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+
+  # Explicitly register kotlin-js-store as an npm ecosystem but ignore all
+  # updates. This prevents security-only scans from failing when the vendored
+  # dependencies have known vulnerabilities that are intentionally not updated
+  # here (updates come from the workspace template instead).
+  - package-ecosystem: npm
+    directory: "/kotlin-js-store"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
