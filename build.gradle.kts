@@ -478,6 +478,7 @@ val codeqlCompileJvm = tasks.register<JavaExec>("codeqlCompileJvm") {
     outputs.dir(outDir)
     outputs.dir(aarExtractDir)
     outputs.dir(sentinelDir)
+    outputs.upToDateWhen { false }
 
     doFirst {
         outDir.get().asFile.mkdirs()
