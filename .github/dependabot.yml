@@ -40,14 +40,13 @@ updates:
       - "dependencies"
       - "github-actions"
 
-  # Explicitly register kotlin-js-store as an npm ecosystem but ignore all
-  # updates. This prevents security-only scans from failing when the vendored
-  # dependencies have known vulnerabilities that are intentionally not updated
-  # here (updates come from the workspace template instead).
+  # Explicitly register kotlin-js-store as an npm ecosystem with PR limit 0.
+  # This prevents Dependabot from creating PRs for vendored dependencies that
+  # are intentionally managed via the workspace template, not via Dependabot.
+  # Setting open-pull-requests-limit to 0 disables both version and security
+  # updates for this directory.
   - package-ecosystem: npm
     directory: "/kotlin-js-store"
     schedule:
       interval: weekly
     open-pull-requests-limit: 0
-    ignore:
-      - dependency-name: "*"
