@@ -88,7 +88,6 @@ import kotlin.native.HiddenFromObjC
 class MultiMap<K, V> internal constructor(
     internal val inner: MutableMap<K, MutableList<V>>,
 ) : Iterable<Pair<K, MutableList<V>>> {
-
     /**
      * Creates an empty MultiMap
      *
@@ -549,13 +548,12 @@ class MultiMap<K, V> internal constructor(
      * check(m.getVec(1) == mutableListOf(44, 50))
      * ```
      */
-    fun entry(k: K): Entry<K, V> {
-        return if (inner.containsKey(k)) {
+    fun entry(k: K): Entry<K, V> =
+        if (inner.containsKey(k)) {
             Entry.Occupied(OccupiedEntry(inner, k))
         } else {
             Entry.Vacant(VacantEntry(inner, k))
         }
-    }
 
     /**
      * Retains only the elements specified by the predicate.
@@ -588,6 +586,7 @@ class MultiMap<K, V> internal constructor(
     }
 
     // impl Index<&Q> for MultiMap
+
     /**
      * Mirrors the upstream `Index::index` impl: returns the first value in the
      * vector for the given key, throwing [IllegalStateException] when the key
@@ -660,15 +659,15 @@ class MultiMap<K, V> internal constructor(
         // parameters from the bridge call site (no value-arg carries K/V)
         // and fails `compileSwiftExportMainKotlinMacosArm64` with
         // `Cannot infer type for type parameter 'K' / 'V'`.
-        internal fun <K, V> withCapacity(capacity: Int): MultiMap<K, V> {
-            return MultiMap(HashMap(capacity))
-        }
+        internal fun <K, V> withCapacity(capacity: Int): MultiMap<K, V> = MultiMap(HashMap(capacity))
 
         // impl Default for MultiMap
+
         /** Mirrors Rust `Default` for the [MultiMap] type. */
         internal fun <K, V> default(): MultiMap<K, V> = MultiMap()
 
         // impl FromIterator<(K, V)> for MultiMap
+
         /** Builds a [MultiMap] from an iterable of single key-value pairs. */
         fun <K, V> fromIterator(iterable: Iterable<Pair<K, V>>): MultiMap<K, V> {
             val multimap = MultiMap<K, V>()
@@ -679,6 +678,7 @@ class MultiMap<K, V> internal constructor(
         }
 
         // impl FromIterator<(K, Vec<V>)> for MultiMap
+
         /** Builds a [MultiMap] from an iterable of `Pair<K, List<V>>` values. */
         fun <K, V> fromIteratorVec(iterable: Iterable<Pair<K, List<V>>>): MultiMap<K, V> {
             val multimap = MultiMap<K, V>()
@@ -691,6 +691,7 @@ class MultiMap<K, V> internal constructor(
 }
 
 // impl Extend<(K, V)> for MultiMap
+
 /** Extends the multimap with single key-value pairs. */
 @HiddenFromObjC
 fun <K, V> MultiMap<K, V>.extend(iter: Iterable<Pair<K, V>>) {
@@ -700,6 +701,7 @@ fun <K, V> MultiMap<K, V>.extend(iter: Iterable<Pair<K, V>>) {
 }
 
 // impl Extend<(K, Vec<V>)> for MultiMap
+
 /** Extends the multimap with `Pair<K, List<V>>` values. */
 @HiddenFromObjC
 fun <K, V> MultiMap<K, V>.extendVec(iter: Iterable<Pair<K, List<V>>>) {

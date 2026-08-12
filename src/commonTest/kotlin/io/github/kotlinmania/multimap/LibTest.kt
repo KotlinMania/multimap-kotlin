@@ -103,9 +103,10 @@ class LibTest {
     @Test
     fun indexNoEntry() {
         val m: MultiMap<Int, Int> = MultiMap()
-        val ex = assertFailsWith<IllegalStateException> {
-            m.index(1)
-        }
+        val ex =
+            assertFailsWith<IllegalStateException> {
+                m.index(1)
+            }
         assertEquals("no entry found for key", ex.message)
     }
 
@@ -124,9 +125,10 @@ class LibTest {
         val m: MultiMap<Int, Int> = MultiMap()
         m.insert(1, 42)
         m.getVecMut(1)!!.clear()
-        val ex = assertFailsWith<IllegalStateException> {
-            m.index(1)
-        }
+        val ex =
+            assertFailsWith<IllegalStateException> {
+                m.index(1)
+            }
         assertEquals("no value found for key", ex.message)
     }
 
@@ -493,12 +495,13 @@ class LibTest {
 
     @Test
     fun testFromVecIterator() {
-        val vals: List<Pair<String, List<Long>>> = listOf(
-            "foo" to listOf(123L, 456L),
-            "bar" to listOf(234L),
-            "foobar" to listOf(567L, 678L, 789L),
-            "bar" to listOf(12L, 23L, 34L),
-        )
+        val vals: List<Pair<String, List<Long>>> =
+            listOf(
+                "foo" to listOf(123L, 456L),
+                "bar" to listOf(234L),
+                "foobar" to listOf(567L, 678L, 789L),
+                "bar" to listOf(12L, 23L, 34L),
+            )
 
         val multimap: MultiMap<String, Long> = MultiMap.fromIteratorVec(vals)
 
@@ -638,11 +641,12 @@ class LibTest {
 
         manualMap.insert("key1", 1337)
         manualMap.insert("key2", 2332)
-        val macroMap = multimapOf(
-            "key1" to 42,
-            "key1" to 1337,
-            "key2" to 2332,
-        )
+        val macroMap =
+            multimapOf(
+                "key1" to 42,
+                "key1" to 1337,
+                "key2" to 2332,
+            )
         assertEquals(manualMap, macroMap)
     }
 
@@ -666,5 +670,4 @@ class LibTest {
         assertEquals(1, m.len())
         assertEquals(42, m.get(1))
     }
-
 }

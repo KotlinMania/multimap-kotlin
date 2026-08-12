@@ -22,7 +22,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SerdeTest {
-
     private val serializer = MultiMapSerializer(Char.serializer(), UByte.serializer())
 
     private fun assertTokens(map: MultiMap<Char, UByte>, expected: String) {

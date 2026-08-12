@@ -36,14 +36,10 @@ class OccupiedEntry<K, V> internal constructor(
      *
      * This method will panic if the key has zero values.
      */
-    fun get(): V {
-        return inner[key]!!.firstOrNull() ?: error("no values in entry")
-    }
+    fun get(): V = inner[key]!!.firstOrNull() ?: error("no values in entry")
 
     /** Gets a reference to the values (vector) corresponding to entry. */
-    fun getVec(): MutableList<V> {
-        return inner[key]!!
-    }
+    fun getVec(): MutableList<V> = inner[key]!!
 
     /**
      * Gets a mut reference to the first item in value in the vector corresponding to entry.
@@ -52,30 +48,22 @@ class OccupiedEntry<K, V> internal constructor(
      *
      * This method will panic if the key has zero values.
      */
-    fun getMut(): V {
-        return inner[key]!!.firstOrNull() ?: error("no values in entry")
-    }
+    fun getMut(): V = inner[key]!!.firstOrNull() ?: error("no values in entry")
 
     /** Gets a mut reference to the values (vector) corresponding to entry. */
-    fun getVecMut(): MutableList<V> {
-        return inner[key]!!
-    }
+    fun getVecMut(): MutableList<V> = inner[key]!!
 
     /**
      * Converts the OccupiedEntry into a mutable reference to the first item in value in the entry
      * with a lifetime bound to the map itself
      */
-    fun intoMut(): V {
-        return inner[key]!![0]
-    }
+    fun intoMut(): V = inner[key]!![0]
 
     /**
      * Converts the OccupiedEntry into a mutable reference to the values (vector) in the entry
      * with a lifetime bound to the map itself
      */
-    fun intoVecMut(): MutableList<V> {
-        return inner[key]!!
-    }
+    fun intoVecMut(): MutableList<V> = inner[key]!!
 
     /** Inserts a new value onto the vector of the entry. */
     fun insert(value: V) {
@@ -88,9 +76,7 @@ class OccupiedEntry<K, V> internal constructor(
     }
 
     /** Takes the values (vector) out of the entry, and returns it */
-    fun remove(): MutableList<V> {
-        return inner.remove(key)!!
-    }
+    fun remove(): MutableList<V> = inner.remove(key)!!
 }
 
 /** A view into a single empty location in a MultiMap. */
@@ -124,33 +110,35 @@ class VacantEntry<K, V> internal constructor(
 sealed class Entry<K, V> {
     /** An occupied Entry. */
     @HiddenFromObjC
-    class Occupied<K, V>(val entry: OccupiedEntry<K, V>) : Entry<K, V>()
+    class Occupied<K, V>(
+        val entry: OccupiedEntry<K, V>,
+    ) : Entry<K, V>()
 
     /** A vacant Entry. */
     @HiddenFromObjC
-    class Vacant<K, V>(val entry: VacantEntry<K, V>) : Entry<K, V>()
+    class Vacant<K, V>(
+        val entry: VacantEntry<K, V>,
+    ) : Entry<K, V>()
 
     /**
      * Ensures a value is in the entry by inserting the default if empty, and returns
      * a mutable reference to the value in the entry. This will return a mutable reference to the
      * first value in the vector corresponding to the specified key.
      */
-    fun orInsert(default: V): V {
-        return when (this) {
+    fun orInsert(default: V): V =
+        when (this) {
             is Occupied -> entry.intoMut()
             is Vacant -> entry.insert(default)
         }
-    }
 
     /**
      * Ensures a value is in the entry by inserting the default values if empty, and returns
      * a mutable reference to the values (the corresponding vector to the specified key) in
      * the entry.
      */
-    fun orInsertVec(defaults: MutableList<V>): MutableList<V> {
-        return when (this) {
+    fun orInsertVec(defaults: MutableList<V>): MutableList<V> =
+        when (this) {
             is Occupied -> entry.intoVecMut()
             is Vacant -> entry.insertVec(defaults)
         }
-    }
 }
