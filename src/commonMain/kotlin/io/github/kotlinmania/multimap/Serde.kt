@@ -22,13 +22,13 @@
 
 package io.github.kotlinmania.multimap
 
-import kotlin.native.HiddenFromObjC
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlin.native.HiddenFromObjC
 
 // impl<K, V, BS> Serialize for MultiMap<K, V, BS>
 //     where K: Serialize + Eq + Hash, V: Serialize, BS: BuildHasher
