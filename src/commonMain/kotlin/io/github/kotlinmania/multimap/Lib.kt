@@ -68,6 +68,9 @@
 
 package io.github.kotlinmania.multimap
 
+import io.github.kotlinmania.serde.SerdeResult
+import io.github.kotlinmania.serdecore.ser.Serialize
+import io.github.kotlinmania.serdecore.ser.Serializer
 import kotlin.native.HiddenFromObjC
 
 // Upstream re-exports `std::collections::hash_map::Iter as IterAll` and
@@ -87,7 +90,11 @@ import kotlin.native.HiddenFromObjC
 @HiddenFromObjC
 class MultiMap<K, V> internal constructor(
     internal val inner: MutableMap<K, MutableList<V>>,
-) : Iterable<Pair<K, MutableList<V>>> {
+) : Iterable<Pair<K, MutableList<V>>>,
+    Serialize {
+    override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+        serializeMultiMap(this, serializer)
+
     /**
      * Creates an empty MultiMap
      *

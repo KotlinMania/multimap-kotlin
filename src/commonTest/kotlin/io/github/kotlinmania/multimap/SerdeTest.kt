@@ -1,4 +1,4 @@
-// port-lint: source src/serde.rs
+// port-lint: tests src/serde.rs
 // Copyright (c) 2016 multimap developers
 //
 // Licensed under the Apache License, Version 2.0
@@ -7,35 +7,26 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-// Mirrors the upstream `#[cfg(test)] mod tests` block at the bottom of
-// `src/serde.rs`. The upstream tests drive `serde_test::assert_tokens`, which
-// asserts both the serialize and deserialize sides against a fixed token
-// stream. The Kotlin counterpart round-trips the [MultiMap] through JSON and
-// asserts both the encoded text and the decoded value, since kotlinx.
-// serialization does not vend a token-stream test format.
-
 package io.github.kotlinmania.multimap
 
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.Json
+import io.github.kotlinmania.serdecore.de.CharDeserialize
+import io.github.kotlinmania.serdecore.de.U8Deserialize
+import io.github.kotlinmania.serdetest.Token
+import io.github.kotlinmania.serdetest.assertTokens
 import kotlin.test.Test
-import kotlin.test.assertEquals
 
 class SerdeTest {
-    private val serializer = MultiMapSerializer(Char.serializer(), UByte.serializer())
-
-    private fun assertTokens(map: MultiMap<Char, UByte>, expected: String) {
-        val encoded = Json.encodeToString(serializer, map)
-        assertEquals(expected, encoded)
-        val decoded = Json.decodeFromString(serializer, expected)
-        assertEquals(map, decoded)
-    }
+    private val deserialize = multiMapDeserialize(CharDeserialize, U8Deserialize)
 
     @Test
     fun testEmpty() {
         val map = MultiMap<Char, UByte>()
 
-        assertTokens(map, "{}")
+        assertTokens(
+            map,
+            deserialize,
+            listOf(Token.Map(0), Token.MapEnd),
+        )
     }
 
     @Test
@@ -43,7 +34,18 @@ class SerdeTest {
         val map = MultiMap<Char, UByte>()
         map.insert('x', 1u)
 
-        assertTokens(map, """{"x":[1]}""")
+        assertTokens(
+            map,
+            deserialize,
+            listOf(
+                Token.Map(1),
+                Token.CharValue('x'),
+                Token.Seq(1),
+                Token.U8(1u),
+                Token.SeqEnd,
+                Token.MapEnd,
+            ),
+        )
     }
 
     @Test
@@ -54,6 +56,20 @@ class SerdeTest {
         map.insert('x', 1u)
         map.insert('x', 5u)
 
-        assertTokens(map, """{"x":[1,3,1,5]}""")
+        assertTokens(
+            map,
+            deserialize,
+            listOf(
+                Token.Map(1),
+                Token.CharValue('x'),
+                Token.Seq(4),
+                Token.U8(1u),
+                Token.U8(3u),
+                Token.U8(1u),
+                Token.U8(5u),
+                Token.SeqEnd,
+                Token.MapEnd,
+            ),
+        )
     }
 }

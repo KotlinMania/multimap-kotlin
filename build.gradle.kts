@@ -120,6 +120,11 @@ configurations.configureEach {
             ),
         )
     }
+    if (name.contains("androidDeviceTest", ignoreCase = true) ||
+        (name.contains("Android", ignoreCase = true) && name.endsWith("RuntimeClasspath"))
+    ) {
+        exclude(group = "org.jetbrains", module = "annotations")
+    }
 }
 
 // Opt-ins shared across Kotlin targets.
@@ -904,6 +909,18 @@ tasks.register("setupAndroidSdk") {
     dependsOn("ensureAndroidSdk")
 }
 
+// Exact test lifecycle task. Without this, ./gradlew test is ambiguous between
+// Android test task names. This runs commonTest through the KMP allTests
+// lifecycle and adds the Android host + Swift Export parity tests.
+tasks.register("test") {
+    group = "verification"
+    description = "Runs the commonTest-backed KMP suite, Android host tests, and Swift Export smoke test."
+    dependsOn("hostTests")
+    if (tasks.names.contains("swiftTest")) {
+        dependsOn("swiftTest")
+    }
+}
+
 // Explicit test runner. Named hostTests to avoid shadowing the KMP allTests
 // lifecycle task. Do not use findByName/mapNotNull here: missing test tasks
 // mean the target surface drifted and must fail loudly.
@@ -923,7 +940,11 @@ tasks.register("hostTests") {
 // Patch generated SPM Package.swift to include minimum macOS platform for Swift Concurrency
 tasks.matching { it.name.contains("GenerateSPMPackage") }.configureEach {
     doLast {
-        val spmDir = layout.buildDirectory.dir("SPMPackage").orNull?.asFile
+        val spmDir =
+            layout.buildDirectory
+                .dir("SPMPackage")
+                .orNull
+                ?.asFile
         if (spmDir != null && spmDir.exists()) {
             spmDir.walkTopDown().filter { it.name == "Package.swift" }.forEach { file ->
                 val text = file.readText()

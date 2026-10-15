@@ -22,6 +22,15 @@
 
 package io.github.kotlinmania.multimap
 
+import io.github.kotlinmania.serde.SerdeResult
+import io.github.kotlinmania.serde.serdeCatching
+import io.github.kotlinmania.serdecore.de.Deserialize
+import io.github.kotlinmania.serdecore.de.Deserializer
+import io.github.kotlinmania.serdecore.de.MapAccess
+import io.github.kotlinmania.serdecore.de.Visitor
+import io.github.kotlinmania.serdecore.de.mutableListDeserialize
+import io.github.kotlinmania.serdecore.ser.Serialize
+import io.github.kotlinmania.serdecore.ser.Serializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
@@ -30,18 +39,141 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlin.native.HiddenFromObjC
 
-// impl<K, V, BS> Serialize for MultiMap<K, V, BS>
-//     where K: Serialize + Eq + Hash, V: Serialize, BS: BuildHasher
-//
-// impl<'a, K, V, S> Deserialize<'a> for MultiMap<K, V, S>
-//     where K: Deserialize<'a> + Eq + Hash, V: Deserialize<'a>,
-//           S: BuildHasher + Default
-//
-// Both upstream impls go through the inner `HashMap<K, Vec<V>>`. The Kotlin
-// translation drops the `BuildHasher` generic — Kotlin's [MutableMap] hides
-// hasher selection — and pairs the [MultiMap] with a serializer that round-
-// trips it as a `Map<K, List<V>>` using kotlinx.serialization's built-in
-// [MapSerializer] and [ListSerializer].
+fun wrapSerialize(value: Any?): Serialize =
+    when (value) {
+        null ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeNone()
+            }
+        is Serialize -> value
+        is Boolean ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeBool(value)
+            }
+        is Byte ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeI8(value)
+            }
+        is Short ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeI16(value)
+            }
+        is Int ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeI32(value)
+            }
+        is Long ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeI64(value)
+            }
+        is UByte ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeU8(value)
+            }
+        is UShort ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeU16(value)
+            }
+        is UInt ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeU32(value)
+            }
+        is ULong ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeU64(value)
+            }
+        is Float ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeF32(value)
+            }
+        is Double ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeF64(value)
+            }
+        is Char ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeChar(value)
+            }
+        is String ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeStr(value)
+            }
+        is ByteArray ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serializer.serializeBytes(value)
+            }
+        is Iterable<*> ->
+            object : Serialize {
+                override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
+                    serdeCatching {
+                        val list = value.toList()
+                        val seq = serializer.serializeSeq(list.size).getOrThrow()
+                        for (item in list) {
+                            seq.serializeElement(wrapSerialize(item)).getOrThrow()
+                        }
+                        seq.end().getOrThrow()
+                    }
+            }
+        else -> error("Cannot serialize value of type ${value::class}")
+    }
+
+internal fun <Ok, K, V> serializeMultiMap(
+    multimap: MultiMap<K, V>,
+    serializer: Serializer<Ok>,
+): SerdeResult<Ok> =
+    serdeCatching {
+        val mapSerializer = serializer.serializeMap(multimap.inner.size).getOrThrow()
+        for ((key, values) in multimap.inner) {
+            mapSerializer
+                .serializeEntry(
+                    wrapSerialize(key),
+                    wrapSerialize(values),
+                ).getOrThrow()
+        }
+        mapSerializer.end().getOrThrow()
+    }
+
+fun <K, V> multiMapDeserialize(
+    keyDeserialize: Deserialize<K>,
+    valueDeserialize: Deserialize<V>,
+): Deserialize<MultiMap<K, V>> =
+    object : Deserialize<MultiMap<K, V>> {
+        override fun <D : Deserializer> deserialize(deserializer: D): SerdeResult<MultiMap<K, V>> =
+            deserializer.deserializeMap(
+                object : Visitor<MultiMap<K, V>> {
+                    override fun expecting(): String = "expected a map"
+
+                    override fun <A> visitMap(access: A): SerdeResult<MultiMap<K, V>>
+                        where A : MapAccess =
+                        serdeCatching {
+                            val hint = access.sizeHint() ?: 0
+                            val multimap = MultiMap.withCapacity<K, V>(hint)
+                            val listDeserialize = mutableListDeserialize(valueDeserialize)
+                            while (true) {
+                                val entry = access.nextEntry(keyDeserialize, listDeserialize).getOrThrow() ?: break
+                                multimap.inner[entry.first] = entry.second
+                            }
+                            multimap
+                        }
+                },
+            )
+    }
+
 @HiddenFromObjC
 class MultiMapSerializer<K, V>(
     keySerializer: KSerializer<K>,
