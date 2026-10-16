@@ -140,29 +140,40 @@ internal fun <Ok, K, V> serializeMultiMap(
         mapSerializer.end().getOrThrow()
     }
 
+@HiddenFromObjC
+class MultiMapVisitor<K, V>(
+    private val keyDeserialize: Deserialize<K>,
+    private val valueDeserialize: Deserialize<V>,
+) : Visitor<MultiMap<K, V>> {
+    override fun expecting(): String = "expected a map"
+
+    override fun <A : MapAccess> visitMap(access: A): SerdeResult<MultiMap<K, V>> =
+        serdeCatching {
+            val hint = access.sizeHint() ?: 0
+            val values = MultiMap.withCapacity<K, V>(hint)
+            val listDeserialize = mutableListDeserialize(valueDeserialize)
+            while (true) {
+                val entry = access.nextEntry(keyDeserialize, listDeserialize).getOrThrow() ?: break
+                values.inner[entry.first] = entry.second
+            }
+            values
+        }
+
+    companion object {
+        fun <K, V> new(
+            keyDeserialize: Deserialize<K>,
+            valueDeserialize: Deserialize<V>,
+        ): MultiMapVisitor<K, V> = MultiMapVisitor(keyDeserialize, valueDeserialize)
+    }
+}
+
 fun <K, V> multiMapDeserialize(
     keyDeserialize: Deserialize<K>,
     valueDeserialize: Deserialize<V>,
 ): Deserialize<MultiMap<K, V>> =
     object : Deserialize<MultiMap<K, V>> {
         override fun <D : Deserializer> deserialize(deserializer: D): SerdeResult<MultiMap<K, V>> =
-            deserializer.deserializeMap(
-                object : Visitor<MultiMap<K, V>> {
-                    override fun expecting(): String = "expected a map"
-
-                    override fun <A : MapAccess> visitMap(access: A): SerdeResult<MultiMap<K, V>> =
-                        serdeCatching {
-                            val hint = access.sizeHint() ?: 0
-                            val multimap = MultiMap.withCapacity<K, V>(hint)
-                            val listDeserialize = mutableListDeserialize(valueDeserialize)
-                            while (true) {
-                                val entry = access.nextEntry(keyDeserialize, listDeserialize).getOrThrow() ?: break
-                                multimap.inner[entry.first] = entry.second
-                            }
-                            multimap
-                        }
-                },
-            )
+            deserializer.deserializeMap(MultiMapVisitor.new(keyDeserialize, valueDeserialize))
     }
 
 @HiddenFromObjC
@@ -179,9 +190,6 @@ class MultiMapSerializer<K, V>(
         delegate.serialize(encoder, value.inner)
     }
 
-    // Reads each `(K, List<V>)` entry and inserts it directly into the new multimap's
-    // backing map. The capacity hint comes from the underlying serializer's
-    // size hint, propagated through [MultiMap.withCapacity].
     override fun deserialize(decoder: Decoder): MultiMap<K, V> {
         val map = delegate.deserialize(decoder)
         val values = MultiMap.withCapacity<K, V>(map.size)
