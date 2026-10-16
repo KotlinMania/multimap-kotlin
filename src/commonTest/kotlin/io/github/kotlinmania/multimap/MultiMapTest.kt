@@ -1,4 +1,3 @@
-// port-lint: source src/lib.rs
 // Copyright (c) 2016 multimap developers
 //
 // Licensed under the Apache License, Version 2.0
@@ -24,7 +23,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class LibTest {
+class MultiMapTest {
     @Test
     fun create() {
         MultiMap<Int, Int>(mutableMapOf())
@@ -288,9 +287,7 @@ class LibTest {
         val all = m.iter().asSequence().toList()
         assertTrue(all.all { it.second == 42 })
 
-        // Upstream: `for _ in iter.by_ref().take(2) {}` then `iter.len() == 1`.
-        // Kotlin iterators don't expose `len()`, so instead check the count of
-        // remaining elements after consuming two.
+        // Check the count of remaining elements after consuming two.
         val cursor = m.iter()
         repeat(2) { if (cursor.hasNext()) cursor.next() }
         var remaining = 0

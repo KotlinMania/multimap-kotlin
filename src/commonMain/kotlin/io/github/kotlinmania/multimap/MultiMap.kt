@@ -1,4 +1,3 @@
-// port-lint: source src/lib.rs
 // Copyright (c) 2016 multimap developers
 //
 // Licensed under the Apache License, Version 2.0
@@ -72,20 +71,6 @@ import io.github.kotlinmania.serde.SerdeResult
 import io.github.kotlinmania.serdecore.ser.Serialize
 import io.github.kotlinmania.serdecore.ser.Serializer
 import kotlin.native.HiddenFromObjC
-
-// Upstream re-exports `std::collections::hash_map::Iter as IterAll` and
-// `IterMut as IterAllMut` from the crate root. Kotlin's standard library does
-// not vend a separate immutable / mutable map iterator pair, so the port
-// surfaces those views directly through the [MultiMap.iterAll] and
-// [MultiMap.iterAllMut] methods, which yield `Pair<K, MutableList<V>>` and
-// `Pair<K, MutableList<V>>` respectively (mutability of the backing list
-// matches the Rust iterator's mutability).
-//
-// Upstream `MultiMap<K, V, S = RandomState>` carries a `BuildHasher` generic
-// so callers can swap the standard library hasher. Kotlin's `MutableMap`
-// hides hasher selection, so the port collapses to `MultiMap<K, V>`. The
-// upstream `with_hasher` and `with_capacity_and_hasher` constructors have no
-// faithful Kotlin counterpart and therefore do not appear here.
 
 @HiddenFromObjC
 class MultiMap<K, V> internal constructor(

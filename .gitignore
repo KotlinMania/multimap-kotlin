@@ -32,6 +32,7 @@ kotlin-js-store/*
 !kotlin-js-store/wasm/yarn.lock
 tools/ast_distance/ast_distance
 tools/ast_distance/build/
+deep_symbol_inventory.txt
 
 # JVM heap dumps
 *.hprof
@@ -77,3 +78,4 @@ DerivedData/
 *.xcuserstate
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
+tools/ast_distance

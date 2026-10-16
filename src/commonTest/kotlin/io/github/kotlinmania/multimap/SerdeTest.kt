@@ -1,4 +1,4 @@
-// port-lint: tests src/serde.rs
+// port-lint: tests serde.rs
 // Copyright (c) 2016 multimap developers
 //
 // Licensed under the Apache License, Version 2.0

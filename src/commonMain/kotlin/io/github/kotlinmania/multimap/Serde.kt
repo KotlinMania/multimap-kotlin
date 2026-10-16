@@ -1,4 +1,4 @@
-// port-lint: source src/serde.rs
+// port-lint: source serde.rs
 // Copyright (c) 2016 multimap developers
 //
 // Licensed under the Apache License, Version 2.0
@@ -8,15 +8,7 @@
 // modified, or distributed except according to those terms.
 
 /**
- * kotlinx.serialization implementations for [MultiMap].
- *
- * Mirrors the upstream `serde_impl` Cargo feature, which is on by default.
- * Upstream wires [MultiMap] into the serde derive ecosystem by hand-rolling a
- * `Serialize` impl that delegates to the inner map and a `Deserialize` impl
- * driven by a [MultiMapVisitor]. kotlinx.serialization expresses both
- * directions through a single [KSerializer], so the two upstream impls and the
- * helper visitor collapse into [MultiMapSerializer], which delegates to a
- * `Map<K, List<V>>` serializer underneath.
+ * Serde trait implementations for [MultiMap].
  */
 @file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
 
@@ -158,8 +150,7 @@ fun <K, V> multiMapDeserialize(
                 object : Visitor<MultiMap<K, V>> {
                     override fun expecting(): String = "expected a map"
 
-                    override fun <A> visitMap(access: A): SerdeResult<MultiMap<K, V>>
-                        where A : MapAccess =
+                    override fun <A : MapAccess> visitMap(access: A): SerdeResult<MultiMap<K, V>> =
                         serdeCatching {
                             val hint = access.sizeHint() ?: 0
                             val multimap = MultiMap.withCapacity<K, V>(hint)
@@ -188,8 +179,7 @@ class MultiMapSerializer<K, V>(
         delegate.serialize(encoder, value.inner)
     }
 
-    // Mirrors the upstream `MultiMapVisitor::visit_map`, which reads each
-    // `(K, Vec<V>)` entry and inserts it directly into the new multimap's
+    // Reads each `(K, List<V>)` entry and inserts it directly into the new multimap's
     // backing map. The capacity hint comes from the underlying serializer's
     // size hint, propagated through [MultiMap.withCapacity].
     override fun deserialize(decoder: Decoder): MultiMap<K, V> {
