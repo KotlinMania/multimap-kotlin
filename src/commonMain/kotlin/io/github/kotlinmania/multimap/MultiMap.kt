@@ -1,3 +1,4 @@
+// port-lint: source lib.rs
 // Copyright (c) 2016 multimap developers
 //
 // Licensed under the Apache License, Version 2.0
@@ -5,6 +6,21 @@
 // license <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
+
+@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+
+package io.github.kotlinmania.multimap
+
+import io.github.kotlinmania.serde.SerdeResult
+import io.github.kotlinmania.serdecore.ser.Serialize
+import io.github.kotlinmania.serdecore.ser.Serializer
+import kotlin.native.HiddenFromObjC
+
+// Upstream MultiMap<K, V, S = RandomState> carries a BuildHasher type parameter
+// so callers can swap the standard library hasher. Kotlin's MutableMap hides
+// hasher selection, so the port collapses the type to MultiMap<K, V> while
+// providing MultiMap.withHasher and MultiMap.withCapacityAndHasher on the
+// companion object.
 
 /**
  * A map implementation which allows storing multiple values per key.
@@ -17,61 +33,7 @@
  * Values are guaranteed to be in insertion order as long as not manually
  * changed. Keys are not ordered. Multiple idential key-value-pairs can exist
  * in the [MultiMap]. A key can exist in the [MultiMap] with no associated value.
- *
- * # Examples
- *
- * ```
- * // create a new MultiMap. An explicit type signature can be omitted because of the
- * // type inference.
- * val queries = MultiMap<String, String>()
- *
- * // insert some queries.
- * queries.insert("urls", "http://rust-lang.org")
- * queries.insert("urls", "http://mozilla.org")
- * queries.insert("urls", "http://wikipedia.org")
- * queries.insert("id", "42")
- * queries.insert("name", "roger")
- *
- * // check if there's any urls.
- * println("Are there any urls in the multimap? ${if (queries.containsKey("urls")) "Yes" else "No"}.")
- *
- * // get the first item in a key's vector.
- * check(queries.get("urls") == "http://rust-lang.org")
- *
- * // get all the urls.
- * check(queries.getVec("urls") ==
- *     mutableListOf("http://rust-lang.org", "http://mozilla.org", "http://wikipedia.org"))
- *
- * // iterate over all keys and the first value in the key's vector.
- * for ((key, value) in queries.iter()) {
- *     println("key: $key, val: $value")
- * }
- *
- * // iterate over all keys and the key's vector.
- * for ((key, values) in queries.iterAll()) {
- *     println("key: $key, values: $values")
- * }
- *
- * // the different methods for getting value(s) from the multimap.
- * val map = MultiMap<String, Int>()
- *
- * map.insert("key1", 42)
- * map.insert("key1", 1337)
- *
- * check(map["key1"] == 42)
- * check(map.get("key1") == 42)
- * check(map.getVec("key1") == mutableListOf(42, 1337))
- * ```
  */
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
-
-package io.github.kotlinmania.multimap
-
-import io.github.kotlinmania.serde.SerdeResult
-import io.github.kotlinmania.serdecore.ser.Serialize
-import io.github.kotlinmania.serdecore.ser.Serializer
-import kotlin.native.HiddenFromObjC
-
 @HiddenFromObjC
 class MultiMap<K, V> internal constructor(
     internal val inner: MutableMap<K, MutableList<V>>,
@@ -150,12 +112,8 @@ class MultiMap<K, V> internal constructor(
      *
      * ```
      * val map = MultiMap<String, Int>()
-     * map.insertManyFromSlice("key", intArrayOf(42, 43))
+     * map.insertManyFromSlice("key", listOf(42, 43))
      * ```
-     *
-     * The Rust upstream constrains this method to `V: Clone` and accepts a
-     * borrowed slice. Kotlin doesn't distinguish slice-ownership, so the port
-     * accepts any [List].
      */
     fun insertManyFromSlice(k: K, v: List<V>) {
         when (val e = entry(k)) {
@@ -238,13 +196,9 @@ class MultiMap<K, V> internal constructor(
      * val map = MultiMap<Int, Int>()
      * map.insert(1, 42)
      * map.insert(1, 1337)
-     * map.getMut(1)?.let { /* in Kotlin, mutate via getVecMut(1)?.set(0, 99) */ }
      * map.getVecMut(1)?.set(0, 99)
      * check(map[1] == 99)
      * ```
-     *
-     * Kotlin returns the value by copy; to overwrite the first slot, use
-     * [getVecMut] and assign through the returned list.
      */
     fun getMut(k: K): V? = inner[k]?.firstOrNull()
 
@@ -310,10 +264,6 @@ class MultiMap<K, V> internal constructor(
      * val map: MultiMap<Int, Int> = MultiMap()
      * check(map.capacity() >= 0)
      * ```
-     *
-     * Kotlin's [MutableMap] does not expose its load capacity, so the port
-     * approximates this with the current size, which is always a valid lower
-     * bound on the capacity.
      */
     fun capacity(): Int = inner.size
 
@@ -385,25 +335,21 @@ class MultiMap<K, V> internal constructor(
      * map.insert(3, 2332)
      * map.insert(4, 1991)
      *
-     * val pairs = map.iter().toMutableList()
+     * val pairs = map.iter().asSequence().toMutableList()
      * pairs.sortBy { it.first }
      * check(pairs == mutableListOf(1 to 42, 3 to 2332, 4 to 1991))
      * ```
      */
-    fun iter(): Iter<K, V> = Iter(inner.entries.iterator())
+    fun iter(): Iter<K, V> = Iter(inner.entries.iterator(), inner.size)
 
     /**
      * A mutable iterator visiting pairs of each key and its first value
      * in arbitrary order. Iterator element type is `Pair<K, V>`.
      *
-     * Kotlin returns values by copy, so mutating through the iterator's
-     * `second` does not write back to the underlying map. To overwrite the
-     * first slot, use [getVecMut] on the key.
-     *
      * See [flatIterMut] for visiting all key-value pairs,
      * or [iterAllMut] for visiting each key and its vector of values.
      */
-    fun iterMut(): IterMut<K, V> = IterMut(inner.entries.iterator())
+    fun iterMut(): IterMut<K, V> = IterMut(inner.entries.iterator(), inner.size)
 
     /**
      * An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -428,16 +374,13 @@ class MultiMap<K, V> internal constructor(
      * ))
      * ```
      */
-    fun iterAll(): Iterable<Pair<K, MutableList<V>>> =
+    fun iterAll(): IterAll<K, V> =
         inner.entries.map { it.key to it.value }
 
     /**
      * An iterator visiting all key-value pairs in arbitrary order. The iterator returns
      * a pair of the key and the corresponding key's vector. Iterator element type is
      * `Pair<K, MutableList<V>>`.
-     *
-     * Mutations to the returned [MutableList] are visible in the [MultiMap]
-     * because the lists are the same instances stored inside the map.
      *
      * # Examples
      *
@@ -461,7 +404,7 @@ class MultiMap<K, V> internal constructor(
      * ))
      * ```
      */
-    fun iterAllMut(): Iterable<Pair<K, MutableList<V>>> =
+    fun iterAllMut(): IterAllMut<K, V> =
         inner.entries.map { it.key to it.value }
 
     /**
@@ -506,17 +449,13 @@ class MultiMap<K, V> internal constructor(
      * pairs.sortWith(compareBy({ it.first }, { it.second }))
      * check(pairs == mutableListOf(1 to 42, 1 to 1337, 3 to 6996, 4 to 7964))
      * ```
-     *
-     * Kotlin returns iteration values by copy, so the upstream pattern
-     * `*value *= key` does not translate directly. Mutate through
-     * [getVecMut] for each key instead.
      */
     fun flatIterMut(): Iterable<Pair<K, V>> =
         iterAllMut().flatMap { (k, v) -> v.map { i -> k to i } }
 
     /**
      * Gets the specified key's corresponding entry in the map for in-place manipulation.
-     * It's possible to both manipulate the vector and the 'value' (the first value in the
+     * It's possible to both manipulate the vector and the `value` (the first value in the
      * vector).
      *
      * # Examples
@@ -577,25 +516,18 @@ class MultiMap<K, V> internal constructor(
         for (k in emptyKeys) inner.remove(k)
     }
 
-    // impl Index<&Q> for MultiMap
-
     /**
-     * Mirrors the upstream `Index::index` impl: returns the first value in the
-     * vector for the given key, throwing [IllegalStateException] when the key
-     * is missing or the vector is empty (`panic!("no entry found for key")`
-     * / `panic!("no value found for key")`).
-     *
-     * Kotlin's `m[k]` operator already maps to [get], which returns `V?` and
-     * matches the upstream `MultiMap::get` semantics; the panicking variant
-     * is exposed under [index] to preserve both halves of the upstream API.
+     * Returns the first value in the vector for the given key, throwing
+     * [IllegalStateException] when the key is missing ("no entry found for key")
+     * or the vector is empty ("no value found for key").
      */
     fun index(k: K): V {
         val list = inner[k] ?: error("no entry found for key")
         return list.firstOrNull() ?: error("no value found for key")
     }
 
-    // impl Debug for MultiMap
-    override fun toString(): String {
+    /** Formats the multimap entries as a debug map string. */
+    fun fmt(): String {
         val sb = StringBuilder("{")
         var first = true
         for ((k, v) in inner) {
@@ -607,7 +539,14 @@ class MultiMap<K, V> internal constructor(
         return sb.toString()
     }
 
-    // impl PartialEq for MultiMap
+    override fun toString(): String = fmt()
+
+    /** Returns true if this multimap contains the same keys and value lists as [other]. */
+    fun eq(other: MultiMap<K, V>): Boolean {
+        if (len() != other.len()) return false
+        return iterAll().all { (key, value) -> other.getVec(key) == value }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is MultiMap<*, *>) return false
@@ -622,7 +561,6 @@ class MultiMap<K, V> internal constructor(
     }
 
     override fun hashCode(): Int {
-        // Mirror upstream PartialEq+Eq with a hash that respects the (key, vector) view.
         var h = 0
         for ((k, v) in inner) {
             h += (k?.hashCode() ?: 0) xor v.hashCode()
@@ -630,10 +568,15 @@ class MultiMap<K, V> internal constructor(
         return h
     }
 
-    // impl IntoIterator for &MultiMap (and &mut MultiMap and MultiMap)
-    override fun iterator(): Iterator<Pair<K, MutableList<V>>> = iterAll().iterator()
+    /** Returns an iterator over `(key, values)` pairs in the multimap. */
+    fun intoIter(): Iterator<Pair<K, MutableList<V>>> = iterAll().iterator()
+
+    override fun iterator(): Iterator<Pair<K, MutableList<V>>> = intoIter()
 
     companion object {
+        /** Creates an empty [MultiMap]. */
+        internal fun <K, V> new(): MultiMap<K, V> = MultiMap()
+
         /**
          * Creates an empty multimap with the given initial capacity.
          *
@@ -642,26 +585,33 @@ class MultiMap<K, V> internal constructor(
          * ```
          * val map: MultiMap<String, Long> = MultiMap.withCapacity(20)
          * ```
-         *
-         * Kotlin's [MutableMap] does not honour an initial-capacity hint
-         * across every target backend; the port still accepts the value so
-         * the upstream API surface is preserved.
          */
-        // Marked `internal` because Swift Export cannot infer the type
-        // parameters from the bridge call site (no value-arg carries K/V)
-        // and fails `compileSwiftExportMainKotlinMacosArm64` with
-        // `Cannot infer type for type parameter 'K' / 'V'`.
         internal fun <K, V> withCapacity(capacity: Int): MultiMap<K, V> = MultiMap(HashMap(capacity))
 
-        // impl Default for MultiMap
+        /**
+         * Creates an empty [MultiMap] which will use the given hash builder to hash keys.
+         */
+        internal fun <K, V, S> withHasher(hashBuilder: S): MultiMap<K, V> {
+            val _ = hashBuilder
+            return MultiMap()
+        }
 
-        /** Mirrors Rust `Default` for the [MultiMap] type. */
+        /**
+         * Creates an empty [MultiMap] with the given initial capacity and hash builder.
+         */
+        internal fun <K, V, S> withCapacityAndHasher(
+            capacity: Int,
+            hashBuilder: S,
+        ): MultiMap<K, V> {
+            val _ = hashBuilder
+            return MultiMap(HashMap(capacity))
+        }
+
+        /** Creates an empty default [MultiMap]. */
         internal fun <K, V> default(): MultiMap<K, V> = MultiMap()
 
-        // impl FromIterator<(K, V)> for MultiMap
-
         /** Builds a [MultiMap] from an iterable of single key-value pairs. */
-        fun <K, V> fromIterator(iterable: Iterable<Pair<K, V>>): MultiMap<K, V> {
+        fun <K, V> fromIter(iterable: Iterable<Pair<K, V>>): MultiMap<K, V> {
             val multimap = MultiMap<K, V>()
             for ((k, v) in iterable) {
                 multimap.insert(k, v)
@@ -669,7 +619,9 @@ class MultiMap<K, V> internal constructor(
             return multimap
         }
 
-        // impl FromIterator<(K, Vec<V>)> for MultiMap
+        /** Builds a [MultiMap] from an iterable of single key-value pairs. */
+        fun <K, V> fromIterator(iterable: Iterable<Pair<K, V>>): MultiMap<K, V> =
+            fromIter(iterable)
 
         /** Builds a [MultiMap] from an iterable of `Pair<K, List<V>>` values. */
         fun <K, V> fromIteratorVec(iterable: Iterable<Pair<K, List<V>>>): MultiMap<K, V> {
@@ -682,8 +634,6 @@ class MultiMap<K, V> internal constructor(
     }
 }
 
-// impl Extend<(K, V)> for MultiMap
-
 /** Extends the multimap with single key-value pairs. */
 @HiddenFromObjC
 fun <K, V> MultiMap<K, V>.extend(iter: Iterable<Pair<K, V>>) {
@@ -691,8 +641,6 @@ fun <K, V> MultiMap<K, V>.extend(iter: Iterable<Pair<K, V>>) {
         insert(k, v)
     }
 }
-
-// impl Extend<(K, Vec<V>)> for MultiMap
 
 /** Extends the multimap with `Pair<K, List<V>>` values. */
 @HiddenFromObjC
@@ -710,78 +658,7 @@ fun <K, V> MultiMap<K, V>.extendVec(iter: Iterable<Pair<K, List<V>>>) {
 }
 
 /**
- * Iterator visiting pairs of each key and its first value in arbitrary order.
- *
- * Mirrors the upstream `Iter<'a, K, V>` struct.
- */
-@HiddenFromObjC
-class Iter<K, V> internal constructor(
-    private val inner: Iterator<Map.Entry<K, MutableList<V>>>,
-) : Iterator<Pair<K, V>> {
-    private var pending: Pair<K, V>? = null
-
-    private fun advance(): Pair<K, V>? {
-        while (inner.hasNext()) {
-            val (k, v) = inner.next()
-            val first = v.firstOrNull()
-            if (first != null) return k to first
-        }
-        return null
-    }
-
-    override fun hasNext(): Boolean {
-        if (pending != null) return true
-        pending = advance()
-        return pending != null
-    }
-
-    override fun next(): Pair<K, V> {
-        val ready = pending
-        pending = null
-        return ready ?: advance() ?: throw NoSuchElementException()
-    }
-}
-
-/**
- * Mutable iterator visiting pairs of each key and its first value in arbitrary
- * order.
- *
- * Mirrors the upstream `IterMut<'a, K, V>` struct. Mutations through the
- * yielded [Pair.second] in Kotlin are by copy; to write back into the map use
- * [MultiMap.getVecMut].
- */
-@HiddenFromObjC
-class IterMut<K, V> internal constructor(
-    private val inner: Iterator<Map.Entry<K, MutableList<V>>>,
-) : Iterator<Pair<K, V>> {
-    private var pending: Pair<K, V>? = null
-
-    private fun advance(): Pair<K, V>? {
-        while (inner.hasNext()) {
-            val (k, v) = inner.next()
-            val first = v.firstOrNull()
-            if (first != null) return k to first
-        }
-        return null
-    }
-
-    override fun hasNext(): Boolean {
-        if (pending != null) return true
-        pending = advance()
-        return pending != null
-    }
-
-    override fun next(): Pair<K, V> {
-        val ready = pending
-        pending = null
-        return ready ?: advance() ?: throw NoSuchElementException()
-    }
-}
-
-/**
  * Create a [MultiMap] from a list of key value pairs.
- *
- * Mirrors the upstream `multimap!` macro.
  *
  * ## Example
  *

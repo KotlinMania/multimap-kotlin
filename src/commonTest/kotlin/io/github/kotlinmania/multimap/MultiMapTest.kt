@@ -1,3 +1,4 @@
+// port-lint: tests lib.rs
 // Copyright (c) 2016 multimap developers
 //
 // Licensed under the Apache License, Version 2.0
@@ -5,13 +6,6 @@
 // license <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
-
-// Mirrors the upstream `#[cfg(test)] mod tests` block at the bottom of
-// `src/lib.rs`. Every upstream test is translated here, top-to-bottom in
-// upstream order, with the same test names (camelCased). Test cases that
-// rely on behaviour Kotlin cannot reproduce — for example mutating through
-// an iterator's value reference — assert through the closest Kotlin analogue
-// using [MultiMap.getVecMut].
 
 package io.github.kotlinmania.multimap
 
@@ -287,15 +281,9 @@ class MultiMapTest {
         val all = m.iter().asSequence().toList()
         assertTrue(all.all { it.second == 42 })
 
-        // Check the count of remaining elements after consuming two.
-        val cursor = m.iter()
-        repeat(2) { if (cursor.hasNext()) cursor.next() }
-        var remaining = 0
-        while (cursor.hasNext()) {
-            cursor.next()
-            remaining += 1
-        }
-        assertEquals(1, remaining)
+        val iter = m.iter()
+        repeat(2) { if (iter.hasNext()) iter.next() }
+        assertEquals(1, iter.len())
     }
 
     @Test
@@ -594,7 +582,7 @@ class MultiMapTest {
             assertEquals(42, v)
             // Upstream: `*v = 44`. Kotlin returns the value by copy, so write
             // back through `getVecMut`.
-            m.getVecMut(1)!![0] = 44
+            m.getVecMut(1)?.set(0, 44)
         }
         assertEquals(666, m.entry(2).orInsert(666))
 

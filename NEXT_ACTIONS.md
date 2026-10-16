@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 2/3 (66.7%)
-- **Function parity:** 20/21 matched (target 40) — 95.2%
-- **Class/type parity:** 3/5 matched (target 7) — 60.0%
-- **Combined symbol parity:** 23/26 matched (target 47) — 88.5%
-- **Average inline-code cosine:** 0.20 (function body across 2 matched files)
-- **Average documentation cosine:** 1.00 (doc text across 2 matched files)
+- **Files Present:** 3/3 (100.0%)
+- **Function parity:** 116/122 matched (target 149) — 95.1%
+- **Class/type parity:** 7/11 matched (target 14) — 63.6%
+- **Combined symbol parity:** 123/133 matched (target 163) — 92.5%
+- **Average inline-code cosine:** 0.25 (function body across 3 matched files)
+- **Average documentation cosine:** 0.87 (doc text across 3 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 2 files with <0.60 function similarity
+- **Critical Issues:** 3 files with <0.60 function similarity
 - **Needs Review:** 0 files with 0.60-0.84 function similarity
 - **Excellent:** 0 files with >=0.85 function similarity
 
@@ -29,19 +29,31 @@ No missing high-value files detected.
 
 Every matched file is listed below with function and type symbol parity.
 
-### 1. serde
+### 1. lib
+
+- **Target:** `multimap.Mod`
+- **Similarity:** 0.31
+- **Dependents:** 0
+- **Priority Score:** 100706.9
+- **Functions:** 95/101 matched (target 108)
+- **Missing functions:** `from_iter`, `into_iter`, `into_iter`, `extend`, `extend`, `extend`
+- **Types:** 3/6 matched
+- **Missing types:** `Output`, `Item`, `IntoIter`
+- **Tests:** 55/55 matched
+
+### 2. serde
 
 - **Target:** `multimap.Serde`
-- **Similarity:** 0.23
+- **Similarity:** 0.27
 - **Dependents:** 0
-- **Priority Score:** 31007.7
-- **Functions:** 7/8 matched (target 27)
-- **Missing functions:** `new`
-- **Types:** 0/2 matched
-- **Missing types:** `MultiMapVisitor`, `Value`
+- **Priority Score:** 11007.3
+- **Functions:** 8/8 matched (target 28)
+- **Missing functions:** _none_
+- **Types:** 1/2 matched (target 3)
+- **Missing types:** `Value`
 - **Tests:** 3/3 matched
 
-### 2. entry
+### 3. entry
 
 - **Target:** `multimap.Entry`
 - **Similarity:** 0.18
@@ -60,17 +72,4 @@ For each file to be considered "complete":
 - All tests ported
 - Documentation ported
 - port-lint header present
-
-## Reexport / Wiring Modules
-
-These files match `reexport_modules` patterns in `.ast_distance_config.json`. They are filtered out of
-normal priority and missing-file ladders because they are wiring
-modules, not direct logic ports. Consult them for call-site routing;
-do not treat them as the next implementation target by default.
-
-### Missing
-
-| Source | Expected target | Deps | Source path | Expected path |
-|--------|-----------------|------|-------------|---------------|
-| `lib` | `Lib` | 0 | `lib.rs` | `Lib.kt` |
 
