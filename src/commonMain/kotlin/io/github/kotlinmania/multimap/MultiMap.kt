@@ -40,7 +40,7 @@ class MultiMap<K, V> internal constructor(
 ) : Iterable<Pair<K, MutableList<V>>>,
     Serialize {
     override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
-        serializeMultiMap(this, serializer)
+        serialize(this, serializer)
 
     /**
      * Creates an empty MultiMap
@@ -374,7 +374,7 @@ class MultiMap<K, V> internal constructor(
      * ))
      * ```
      */
-    fun iterAll(): IterAll<K, V> =
+    fun iterAll(): Iterable<Pair<K, MutableList<V>>> =
         inner.entries.map { it.key to it.value }
 
     /**
@@ -404,7 +404,7 @@ class MultiMap<K, V> internal constructor(
      * ))
      * ```
      */
-    fun iterAllMut(): IterAllMut<K, V> =
+    fun iterAllMut(): Iterable<Pair<K, MutableList<V>>> =
         inner.entries.map { it.key to it.value }
 
     /**
