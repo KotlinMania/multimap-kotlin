@@ -8,7 +8,7 @@
 
 A **Kotlin Multiplatform** multimap collection (`MultiMap<K, V>`) that associates each key with an ordered list of multiple values. This library is a faithful 1:1 Kotlin Multiplatform port of the Rust [`multimap`](https://github.com/havarnov/multimap) crate.
 
-`MultiMap<K, V>` is implemented as a lightweight, zero-overhead wrapper around `HashMap<K, MutableList<V>>`, preserving insertion order for values stored under the same key while providing O(1) average-time key lookup, rich entry-based mutation, flat and grouped iteration views, and built-in `kotlinx.serialization` and `serde-kotlin` support.
+`MultiMap<K, V>` is implemented as a lightweight, zero-overhead wrapper around `HashMap<K, MutableList<V>>`, preserving insertion order for values stored under the same key while providing O(1) average-time key lookup, rich entry-based mutation, flat and grouped iteration views, and built-in `serde-kotlin` support.
 
 ---
 
@@ -19,9 +19,9 @@ A **Kotlin Multiplatform** multimap collection (`MultiMap<K, V>`) that associate
 - **In-Place Entry API**: Inspect, insert, or append to a key's value list in a single lookup via `entry(key)` (`Entry.Occupied` / `Entry.Vacant`, `orInsert`, `orInsertWith`, `orInsertVec`, `orInsertVecWith`).
 - **Six Iteration Views**:
   - First-value per key: `iter()` / `iterMut()` (`Iter<K, V>` / `IterMut<K, V>` with `len()` and `sizeHint()`)
-  - All value lists per key: `iterAll()` / `iterAllMut()` (`IterAll<K, V>` / `IterAllMut<K, V>`)
+  - All value lists per key: `iterAll()` / `iterAllMut()` (`Iterable<Pair<K, MutableList<V>>>`)
   - Flattened `(K, V)` pairs across all values: `flatIter()` / `flatIterMut()`
-- **Serialization Ready**: Includes both a `kotlinx.serialization` `KSerializer` (`MultiMapSerializer`) and `serde-kotlin` `Serialize` / `Deserialize` adapters (`serializeMultiMap`, `multiMapDeserialize`, `MultiMapVisitor`).
+- **Serde Support (`serde-kotlin`)**: Implements `Serialize` and provides `multiMapDeserialize` and `MultiMapVisitor` matching upstream `serde.rs`.
 - **Full Kotlin Multiplatform & Swift Export Support**: Compiles across JVM, Android, JavaScript, WebAssembly (WasmJS & WasmWASI), Linux, Windows, and Apple targets (macOS, iOS, tvOS, watchOS) with direct Swift Export and `XCFramework` packaging.
 
 ---
@@ -221,7 +221,7 @@ for ((key, firstValue) in map.iter()) {
     println("$key -> first: $firstValue")
 }
 
-// 2. Iterate over keys and their COMPLETE value list: Pair<K, List<V>>
+// 2. Iterate over keys and their COMPLETE value list: Pair<K, MutableList<V>>
 for ((key, valueList) in map.iterAll()) {
     println("$key -> all: $valueList")
 }
@@ -238,22 +238,36 @@ for ((key, values) in map) {
 }
 ```
 
-### Serialization (`kotlinx.serialization` & `serde-kotlin`)
+### Serialization (`serde-kotlin`)
 
-`MultiMap` is annotated with `@Serializable(with = MultiMapSerializer::class)` and serializes as a map from `K` to `List<V>`:
+`MultiMap<K, V>` implements `io.github.kotlinmania.serdecore.ser.Serialize` directly and provides `multiMapDeserialize` and `MultiMapVisitor` for `serde-kotlin` deserialization, serializing as a map from `K` to `List<V>`:
 
 ```kotlin
 import io.github.kotlinmania.multimap.MultiMap
-import io.github.kotlinmania.multimap.multimapOf
-import kotlinx.serialization.Serializable
+import io.github.kotlinmania.multimap.multiMapDeserialize
+import io.github.kotlinmania.serdecore.de.CharDeserialize
+import io.github.kotlinmania.serdecore.de.UByteDeserialize
+import io.github.kotlinmania.serdetest.Token
+import io.github.kotlinmania.serdetest.assertTokens
 
-@Serializable
-data class ServiceConfig(
-    val routes: MultiMap<String, String> = multimapOf(),
+val map = MultiMap<Char, UByte>()
+map.insert('x', 1u)
+map.insert('x', 5u)
+
+assertTokens(
+    value = map,
+    deserialize = multiMapDeserialize(CharDeserialize, UByteDeserialize),
+    tokens = arrayOf(
+        Token.Map(1),
+        Token.Char('x'),
+        Token.Seq(2),
+        Token.U8(1u),
+        Token.U8(5u),
+        Token.SeqEnd,
+        Token.MapEnd,
+    ),
 )
 ```
-
-For `serde-kotlin` token/format pipelines, use `serializeMultiMap`, `multiMapDeserialize`, and `MultiMapVisitor`.
 
 ---
 

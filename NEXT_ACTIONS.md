@@ -5,11 +5,11 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 3/3 (100.0%)
-- **Function parity:** 116/122 matched (target 149) — 95.1%
-- **Class/type parity:** 7/11 matched (target 14) — 63.6%
-- **Combined symbol parity:** 123/133 matched (target 163) — 92.5%
-- **Average inline-code cosine:** 0.25 (function body across 3 matched files)
-- **Average documentation cosine:** 0.87 (doc text across 3 matched files)
+- **Function parity:** 116/122 matched (target 130) — 95.1%
+- **Class/type parity:** 7/11 matched (target 11) — 63.6%
+- **Combined symbol parity:** 123/133 matched (target 141) — 92.5%
+- **Average inline-code cosine:** 0.26 (function body across 3 matched files)
+- **Average documentation cosine:** 0.67 (doc text across 3 matched files)
 - **Cheat-zeroed Files:** 0
 - **Critical Issues:** 3 files with <0.60 function similarity
 - **Needs Review:** 0 files with 0.60-0.84 function similarity
@@ -37,19 +37,19 @@ Every matched file is listed below with function and type symbol parity.
 - **Priority Score:** 100706.9
 - **Functions:** 95/101 matched (target 108)
 - **Missing functions:** `from_iter`, `into_iter`, `into_iter`, `extend`, `extend`, `extend`
-- **Types:** 3/6 matched
+- **Types:** 3/6 matched (target 4)
 - **Missing types:** `Output`, `Item`, `IntoIter`
 - **Tests:** 55/55 matched
 
 ### 2. serde
 
 - **Target:** `multimap.Serde`
-- **Similarity:** 0.27
+- **Similarity:** 0.29
 - **Dependents:** 0
-- **Priority Score:** 11007.3
-- **Functions:** 8/8 matched (target 28)
+- **Priority Score:** 11007.1
+- **Functions:** 8/8 matched (target 9)
 - **Missing functions:** _none_
-- **Types:** 1/2 matched (target 3)
+- **Types:** 1/2 matched
 - **Missing types:** `Value`
 - **Tests:** 3/3 matched
 
