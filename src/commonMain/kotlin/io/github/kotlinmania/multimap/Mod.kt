@@ -7,11 +7,7 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-@file:OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
-
 package io.github.kotlinmania.multimap
-
-import kotlin.native.HiddenFromObjC
 
 // Tracking file for upstream multimap/src/lib.rs.
 //
@@ -86,9 +82,7 @@ import kotlin.native.HiddenFromObjC
  * check(map.getVec("key1") == mutableListOf(42, 1337))
  * ```
  */
-@HiddenFromObjC
 typealias IterAll<K, V> = Iterable<Pair<K, MutableList<V>>>
 
 /** Mutable iterator view over all keys and their associated value lists. */
-@HiddenFromObjC
 typealias IterAllMut<K, V> = Iterable<Pair<K, MutableList<V>>>

@@ -592,7 +592,7 @@ class MultiMap<K, V> internal constructor(
          * Creates an empty [MultiMap] which will use the given hash builder to hash keys.
          */
         internal fun <K, V, S> withHasher(hashBuilder: S): MultiMap<K, V> {
-            val _ = hashBuilder
+            hashBuilder.hashCode()
             return MultiMap()
         }
 
@@ -603,7 +603,7 @@ class MultiMap<K, V> internal constructor(
             capacity: Int,
             hashBuilder: S,
         ): MultiMap<K, V> {
-            val _ = hashBuilder
+            hashBuilder.hashCode()
             return MultiMap(HashMap(capacity))
         }
 
