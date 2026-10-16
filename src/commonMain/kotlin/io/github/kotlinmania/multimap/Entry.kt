@@ -1,4 +1,4 @@
-// port-lint: source src/entry.rs
+// port-lint: source entry.rs
 // Copyright (c) 2016 multimap developers
 //
 // Licensed under the Apache License, Version 2.0
@@ -12,16 +12,6 @@
 package io.github.kotlinmania.multimap
 
 import kotlin.native.HiddenFromObjC
-
-// Upstream `entry.rs` re-exports `OccupiedEntry` and `VacantEntry` from
-// `std::collections::hash_map`, wrapping each so the MultiMap can vend
-// vector-valued views into individual map slots. Kotlin's standard
-// `MutableMap` does not vend separate occupied / vacant entry types, so the
-// port models the wrappers as simple holders that carry the backing
-// `MutableMap<K, MutableList<V>>` together with the entry's key. This keeps
-// the per-method semantics (panicking when an Occupied entry has zero values,
-// extending with collections, removing the value vector) identical to
-// upstream while compiling against the Kotlin standard library only.
 
 /** A view into a single occupied location in a MultiMap. */
 @HiddenFromObjC
@@ -55,13 +45,13 @@ class OccupiedEntry<K, V> internal constructor(
 
     /**
      * Converts the OccupiedEntry into a mutable reference to the first item in value in the entry
-     * with a lifetime bound to the map itself
+     * bound to the map itself
      */
     fun intoMut(): V = inner[key]!![0]
 
     /**
      * Converts the OccupiedEntry into a mutable reference to the values (vector) in the entry
-     * with a lifetime bound to the map itself
+     * bound to the map itself
      */
     fun intoVecMut(): MutableList<V> = inner[key]!!
 
