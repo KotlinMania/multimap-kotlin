@@ -40,7 +40,7 @@ class MultiMap<K, V> internal constructor(
 ) : Iterable<Pair<K, MutableList<V>>>,
     Serialize {
     override fun <Ok> serialize(serializer: Serializer<Ok>): SerdeResult<Ok> =
-        io.github.kotlinmania.multimap.serialize(this, serializer)
+        serialize(this, serializer)
 
     /**
      * Creates an empty MultiMap
